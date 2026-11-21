@@ -1,20 +1,33 @@
-import ProductDetail from '@/component/ui/product-datails';
-import { stripe } from '@/lib/stripe';
-import { connection } from "next/server";
-import React from 'react';
+import ProductDetail from "@/component/ui/product-datails";
+import { stripe } from "@/lib/stripe";
+import { cacheLife } from "next/cache";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
-const ProductPage = async ({ params }: { params: Promise<{ id: string }> }) => {
-  await connection();
-
-  const { id } = await params;
+async function getProduct(id: string) {
+  "use cache";
+  cacheLife("hours");
 
   const product = await stripe.products.retrieve(id, {
-    expand: ['default_price'],
+    expand: ["default_price"],
   });
 
-  const plainProduct = JSON.parse(JSON.stringify(product));
+  return JSON.parse(JSON.stringify(product));
+}
 
-  return <ProductDetail product={plainProduct} />;
-};
+async function ProductDetails({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const product = await getProduct(id).catch(() => null);
+
+  if (!product) notFound();
+
+  return <ProductDetail product={product} />;
+}
+
+const ProductPage = ({ params }: { params: Promise<{ id: string }> }) => (
+  <Suspense fallback={<p className="py-20 text-center">Loading...</p>}>
+    <ProductDetails params={params} />
+  </Suspense>
+);
 
 export default ProductPage;

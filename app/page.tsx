@@ -3,12 +3,24 @@ import Image from "next/image";
 import {Button} from '@/component/ui/button'
 import Link from 'next/link'
 import Carousel from '@/component/ui/carousel'
+import {cacheLife} from 'next/cache'
 
-export default async function Home() {
+const getProducts = async()=>{
+  "use cache"
+  cacheLife('hours')
+
   const products = await stripe.products.list({
     expand: ["data.default_price"],
     limit: 5,
-  });
+  })
+
+  return products.data
+}
+
+export default async function Home() {
+
+  const products = await getProducts();
+  
   console.log(products);
   return (
     <div className="">
@@ -27,13 +39,13 @@ export default async function Home() {
           alt="banner image" 
           width={450} 
           height={400} 
-          src={products.data[0].images[0]}
+          src={products[0].images[0]}
           className="rounded-2xl"
           />
         </div>
       </section>
       <section className="py-8">
-        <Carousel products={products.data}/>
+        <Carousel products={products}/>
       </section>
     </div>
   );
