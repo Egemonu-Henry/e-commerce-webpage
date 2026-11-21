@@ -1,14 +1,22 @@
 import ProductList from "@/component/ui/productlist";
 import { stripe } from "@/lib/stripe";
-import React from "react";
+import { cacheLife } from "next/cache";
 
-const page = async () => {
+async function getProducts() {
+  "use cache";
+  cacheLife("hours"); // refresh roughly hourly
+
   const products = await stripe.products.list({
     expand: ["data.default_price"],
   });
-  console.log(products);
+  return products.data;
+}
+
+const page = async () => {
+  const products = await getProducts();
+
   return (
-    <div  className="rounded-3xl bg-neutral-200 py-8 sm:py-12 ">
+    <div className="rounded-3xl bg-neutral-200 py-8 sm:py-12">
       <div className="flex justify-center items-center text-center flex-col">
         <h1 className="font-['Bodoni_Moda',serif] font-medium text-7xl leading-[1.02] tracking-[-0.015em] mt-[22px] mb-0 p-2">
           Dress with
@@ -20,10 +28,20 @@ const page = async () => {
           kept, and loved season after season.
         </p>
       </div>
-
-      <ProductList products={products.data} />
+      <ProductList products={products} />
     </div>
   );
 };
 
 export default page;
+
+
+
+
+
+
+
+
+
+
+
